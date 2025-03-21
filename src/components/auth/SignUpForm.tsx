@@ -59,11 +59,11 @@ const SignUpForm = () => {
       
       toast({
         title: "Account created",
-        description: "Your account has been created successfully",
+        description: "Please check your email to confirm your account",
       });
       
-      // Navigate to dashboard after successful registration
-      navigate("/dashboard");
+      // Redirect to login page with a query param indicating signup success
+      navigate("/login?signup=success");
     } catch (error: any) {
       toast({
         variant: "destructive",
