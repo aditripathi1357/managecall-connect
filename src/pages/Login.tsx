@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,29 +14,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate("/dashboard");
-      }
-    };
-    
-    checkSession();
-    
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          navigate("/dashboard");
-        }
-      }
-    );
-    
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,24 +36,15 @@ const Login = () => {
       });
       
       if (error) {
-        // Handle email not confirmed error more gracefully
-        if (error.message?.includes("Email not confirmed")) {
-          toast({
-            variant: "destructive",
-            title: "Email not confirmed",
-            description: "Please check your inbox and confirm your email address before logging in.",
-          });
-        } else {
-          throw error;
-        }
-      } else if (data.user) {
-        toast({
-          title: "Success",
-          description: "You have been logged in successfully",
-        });
-        
-        navigate("/dashboard");
+        throw error;
       }
+      
+      toast({
+        title: "Success",
+        description: "You have been logged in successfully",
+      });
+      
+      navigate("/");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -169,12 +136,6 @@ const Login = () => {
                 </Button>
               </div>
             </form>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Important:</strong> After signing up, you need to verify your email before logging in. Please check your inbox.
-              </p>
-            </div>
 
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
