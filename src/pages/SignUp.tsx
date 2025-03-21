@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabase";
 
 const SignUp = () => {
   const [firstName, setFirstName] = useState("");
@@ -41,24 +41,35 @@ const SignUp = () => {
     
     setLoading(true);
     
-    // Simulate API call
     try {
-      // In a real app, this would be an API call to your registration endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Register the user with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+        },
+      });
       
-      // For demo purposes, we'll just show a success message and redirect
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Account created",
         description: "Your account has been created successfully",
       });
       
-      // This would typically navigate to a welcome screen or dashboard
+      // Navigate to home page after successful registration
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Registration failed",
-        description: "There was an error creating your account",
+        description: error.message || "There was an error creating your account",
       });
     } finally {
       setLoading(false);

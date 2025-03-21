@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabase";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -29,24 +29,27 @@ const Login = () => {
     
     setLoading(true);
     
-    // Simulate API call
     try {
-      // In a real app, this would be an API call to your authentication endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      // For demo purposes, we'll just show a success message and redirect
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Success",
         description: "You have been logged in successfully",
       });
       
-      // This would typically navigate to a dashboard after successful login
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Please check your credentials and try again",
+        description: error.message || "Please check your credentials and try again",
       });
     } finally {
       setLoading(false);
