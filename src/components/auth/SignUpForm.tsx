@@ -62,8 +62,8 @@ const SignUpForm = () => {
         description: "Your account has been created successfully",
       });
       
-      // Navigate to home page after successful registration
-      navigate("/");
+      // Navigate to dashboard after successful registration
+      navigate("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
