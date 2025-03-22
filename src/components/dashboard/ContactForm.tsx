@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,29 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contacts, setContacts] = useState<ContactDetails[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+
+  // Load contacts from localStorage when component mounts
+  useEffect(() => {
+    const savedContacts = localStorage.getItem('contacts');
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts));
+    }
+    
+    const savedFiles = localStorage.getItem('uploadedFiles');
+    if (savedFiles) {
+      setUploadedFiles(JSON.parse(savedFiles));
+    }
+  }, []);
+
+  // Save contacts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+  
+  // Save uploaded files to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+  }, [uploadedFiles]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -143,11 +166,6 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
     }
   };
 
-  // Function to remove a contact from the displayed list
-  const removeContact = (id: string) => {
-    setContacts(prevContacts => prevContacts.filter(contact => contact.id !== id));
-  };
-
   // Function to add uploaded files to the list
   const addUploadedFile = (fileName: string) => {
     setUploadedFiles(prevFiles => [...prevFiles, fileName]);
@@ -165,8 +183,8 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
-      {/* Make the form larger */}
-      <div className="md:w-2/3">
+      {/* Form section */}
+      <div className="md:w-1/2">
         <Card className="h-full">
           <CardHeader>
             <CardTitle>Add New Contact</CardTitle>
@@ -234,15 +252,33 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
         </Card>
       </div>
       
-      {/* Make the contact list smaller */}
-      <div className="md:w-1/3">
+      {/* Contact list section - now larger */}
+      <div className="md:w-1/2">
         <Card className="h-full">
           <CardHeader>
             <CardTitle>Contact List</CardTitle>
             <CardDescription>
-              All contacts added in this session ({contacts.length})
+              All contacts ({contacts.length})
               {uploadedFiles.length > 0 && ` • Files uploaded: ${uploadedFiles.length}`}
             </CardDescription>
+            {contacts.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  if (confirm("Are you sure you want to clear all contacts?")) {
+                    setContacts([]);
+                    toast({
+                      title: "Contacts cleared",
+                      description: "All contacts have been removed from the list.",
+                    });
+                  }
+                }}
+                className="mt-2"
+              >
+                Clear All
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {contacts.length === 0 && uploadedFiles.length === 0 ? (
@@ -265,37 +301,32 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
                   </Card>
                 )}
                 
-                {/* Display contacts */}
-                {contacts.map((contact) => (
-                  <Card key={contact.id} className="shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">{contact.name}</span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                              {contact.category.replace('_', ' ')}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-600">{contact.email}</div>
-                          <div className="text-sm text-gray-600">{contact.countryCode} {contact.phone}</div>
-                          {contact.source && (
-                            <div className="text-xs text-gray-500 italic">
-                              {contact.source}
+                {/* Display contacts - no remove button */}
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                  {contacts.map((contact) => (
+                    <Card key={contact.id} className="shadow-sm">
+                      <CardContent className="p-4">
+                        <div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">{contact.name}</span>
+                              <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                                {contact.category.replace('_', ' ')}
+                              </span>
                             </div>
-                          )}
+                            <div className="text-sm text-gray-600">{contact.email}</div>
+                            <div className="text-sm text-gray-600">{contact.countryCode} {contact.phone}</div>
+                            {contact.source && (
+                              <div className="text-xs text-gray-500 italic">
+                                {contact.source}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeContact(contact.id)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

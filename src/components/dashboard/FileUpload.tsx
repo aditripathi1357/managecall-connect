@@ -125,6 +125,7 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
           // Clear file input
           e.target.value = '';
         } catch (error: any) {
+          console.error("Error processing file:", error);
           toast({
             variant: "destructive",
             title: "Processing failed",
@@ -146,6 +147,7 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
       
       reader.readAsBinaryString(file);
     } catch (error: any) {
+      console.error("Error uploading file:", error);
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -156,45 +158,47 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="py-3">
-        <CardTitle className="text-lg">Bulk Import</CardTitle>
-        <CardDescription className="text-xs">
-          Upload an Excel file to import multiple contacts at once.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="py-2">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="excel-file" className="whitespace-nowrap text-sm">Excel File:</Label>
-            <Input
-              id="excel-file"
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-              className="text-sm h-8"
-            />
+    <div style={{ float: "right", marginRight: "20px" }}>
+      <Card className="w-80">
+        <CardHeader className="py-2">
+          <CardTitle className="text-md">Bulk Import</CardTitle>
+          <CardDescription className="text-xs">
+            Upload an Excel file to import multiple contacts at once.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="py-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="excel-file" className="whitespace-nowrap text-sm">Excel File:</Label>
+              <Input
+                id="excel-file"
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="text-sm h-8"
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Required columns: name, email, and phone
+            </p>
+            
+            <div className="h-12 flex items-center justify-center">
+              {isUploading ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-1"></div>
+                  <p className="text-xs">Processing...</p>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p className="text-xs">Upload Excel file to import contacts</p>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-gray-500">
-            Required columns: name, email, and phone
-          </p>
-          
-          <div className="h-16 flex items-center justify-center">
-            {isUploading ? (
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-1"></div>
-                <p className="text-sm">Processing...</p>
-              </div>
-            ) : (
-              <div className="text-center text-gray-500">
-                <p className="text-xs">Upload Excel file to import contacts</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
