@@ -56,6 +56,16 @@ const SignUpForm = () => {
       if (error) {
         throw error;
       }
+
+      // Sign in the user immediately after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
       
       toast({
         title: "Account created",

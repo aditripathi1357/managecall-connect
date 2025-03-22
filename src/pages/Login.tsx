@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
@@ -44,12 +45,22 @@ const Login = () => {
         description: "You have been logged in successfully",
       });
       
-      navigate("/");
+      // Redirect to dashboard after successful login
+      navigate("/dashboard");
     } catch (error: any) {
+      let errorMessage = error.message || "Please check your credentials and try again";
+      
+      // Check for common errors and provide more user-friendly messages
+      if (error.message.includes("Email not confirmed")) {
+        errorMessage = "Please check your email to confirm your account before logging in.";
+      } else if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "The email or password you entered is incorrect.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
