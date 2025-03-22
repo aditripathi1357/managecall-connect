@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Select,
@@ -9,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// List of country codes
 const countryCodes = [
   { code: "+1", country: "US" },
   { code: "+44", country: "UK" },
