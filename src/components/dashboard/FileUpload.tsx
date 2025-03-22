@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -36,6 +35,7 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
       }
 
       const file = files[0];
+      const fileName = file.name;
       const reader = new FileReader();
       
       reader.onload = async (event) => {
@@ -84,6 +84,26 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
             return;
           }
           
+          // Add contacts to the contact list (using the window function from ContactForm)
+          if (window.addImportedContacts) {
+            const importedContacts = validData.map((item: any) => ({
+              id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+              name: item.name,
+              email: item.email,
+              countryCode: item.country_code,
+              phone: item.phone,
+              category: selectedCategory,
+              source: `Imported from ${fileName}`
+            }));
+            
+            window.addImportedContacts(importedContacts);
+            
+            // Also add the file name to the uploaded files list
+            if (window.addUploadedFile) {
+              window.addUploadedFile(fileName);
+            }
+          }
+          
           // Insert data in batches of 100
           const batchSize = 100;
           for (let i = 0; i < validData.length; i += batchSize) {
@@ -99,7 +119,7 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
           
           toast({
             title: "File processed",
-            description: `Successfully added ${validData.length} contacts to the ${selectedCategory} database.`,
+            description: `Successfully added ${validData.length} contacts from ${fileName} to the ${selectedCategory} database.`,
           });
           
           // Clear file input
@@ -136,38 +156,39 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bulk Import</CardTitle>
-        <CardDescription>
+    <Card className="h-full">
+      <CardHeader className="py-3">
+        <CardTitle className="text-lg">Bulk Import</CardTitle>
+        <CardDescription className="text-xs">
           Upload an Excel file to import multiple contacts at once.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="excel-file">Excel File</Label>
+      <CardContent className="py-2">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="excel-file" className="whitespace-nowrap text-sm">Excel File:</Label>
             <Input
               id="excel-file"
               type="file"
               accept=".xlsx, .xls"
               onChange={handleFileUpload}
               disabled={isUploading}
+              className="text-sm h-8"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              The Excel file should have columns named: name, email, and phone
-            </p>
           </div>
+          <p className="text-xs text-gray-500">
+            Required columns: name, email, and phone
+          </p>
           
-          <div className="h-[143px] flex items-center justify-center">
+          <div className="h-16 flex items-center justify-center">
             {isUploading ? (
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p>Processing file...</p>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-1"></div>
+                <p className="text-sm">Processing...</p>
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                <p>Upload an Excel file to import contacts</p>
+                <p className="text-xs">Upload Excel file to import contacts</p>
               </div>
             )}
           </div>
@@ -176,5 +197,13 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
     </Card>
   );
 };
+
+// Declare global window interface with our custom functions
+declare global {
+  interface Window {
+    addUploadedFile?: (fileName: string) => void;
+    addImportedContacts?: (contacts: any[]) => void;
+  }
+}
 
 export default FileUpload;
