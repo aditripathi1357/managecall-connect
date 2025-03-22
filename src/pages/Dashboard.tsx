@@ -4,14 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CountryCodeSelect from "@/components/CountryCodeSelect";
 import * as XLSX from 'xlsx';
 
 type ContactCategory = "general" | "doctor" | "real_estate";
@@ -22,9 +21,17 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<ContactCategory>("general");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [phone, setPhone] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits and limit to 10 characters
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+    setPhone(digitsOnly);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +74,7 @@ const Dashboard = () => {
         .insert([{ 
           name, 
           email, 
+          country_code: countryCode,
           phone,
           user_id: user.id
         }]);
@@ -137,12 +145,18 @@ const Dashboard = () => {
           // Validate data
           const validData = data.filter((row: any) => 
             row.name && row.email && row.phone
-          ).map((row: any) => ({
-            name: row.name,
-            email: row.email,
-            phone: row.phone,
-            user_id: user.id
-          }));
+          ).map((row: any) => {
+            let phoneDigitsOnly = String(row.phone).replace(/\D/g, '').slice(0, 10);
+            let rowCountryCode = row.country_code || countryCode;
+            
+            return {
+              name: row.name,
+              email: row.email,
+              country_code: rowCountryCode,
+              phone: phoneDigitsOnly,
+              user_id: user.id
+            };
+          });
           
           if (validData.length === 0) {
             toast({
@@ -208,7 +222,7 @@ const Dashboard = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow bg-gray-50 py-8">
+      <main className="flex-grow bg-gray-50 py-8 mt-16">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold mb-8">Contact Management Dashboard</h1>
           
@@ -257,14 +271,25 @@ const Dashboard = () => {
                         
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number</Label>
-                          <Input
-                            id="phone"
-                            type="tel"
-                            placeholder="(123) 456-7890"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            required
-                          />
+                          <div className="flex gap-2">
+                            <CountryCodeSelect 
+                              value={countryCode}
+                              onValueChange={setCountryCode}
+                            />
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="1234567890"
+                              value={phone}
+                              onChange={handlePhoneChange}
+                              required
+                              className="flex-1"
+                              maxLength={10}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enter up to 10 digits
+                          </p>
                         </div>
                         
                         <Button
