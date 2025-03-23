@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -106,7 +107,8 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
       
       if (!user) {
         toast({
-          variant: "warning",
+          // Change from "warning" to "default" to fix type error
+          variant: "default",
           title: "Contact added locally",
           description: "Please login to save contacts to the database",
         });
@@ -140,7 +142,8 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
       if (error) {
         console.error("Supabase error:", error);
         toast({
-          variant: "warning",
+          // Change from "warning" to "default" to fix type error
+          variant: "default",
           title: "Contact added locally only",
           description: "Unable to save to database: " + error.message,
         });
