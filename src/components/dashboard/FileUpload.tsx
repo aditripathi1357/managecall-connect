@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,7 @@ interface Contact {
   phone: string;
   category: string;
   source?: string;
+  userId?: string;
 }
 
 interface FileUploadProps {
@@ -50,7 +50,6 @@ const FileUpload = ({
     setIsUploading(true);
     
     try {
-      // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -83,7 +82,6 @@ const FileUpload = ({
               break;
           }
           
-          // Validate data
           const validData = data.filter((row: any) => 
             row.name && row.email && row.phone
           ).map((row: any) => {
@@ -108,7 +106,6 @@ const FileUpload = ({
             return;
           }
           
-          // Add contacts to the contact list
           const importedContacts = validData.map((item: any) => ({
             id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
             name: item.name,
@@ -116,20 +113,17 @@ const FileUpload = ({
             countryCode: item.country_code,
             phone: item.phone,
             category: selectedCategory,
-            source: `Imported from ${fileName}`
+            source: `Imported from ${fileName}`,
+            userId: user.id
           }));
           
-          // Add imported contacts via parent component
           addImportedContacts(importedContacts);
           
-          // Add the file name to the uploaded files list
           addUploadedFile(fileName);
           
-          // Insert data in batches of 100
           const batchSize = 100;
           for (let i = 0; i < validData.length; i += batchSize) {
             const batch = validData.slice(i, i + batchSize);
-            // Fixed TypeScript error by using type assertion for the tableName
             const { error } = await supabase
               .from(tableName as any)
               .insert(batch);
@@ -144,7 +138,6 @@ const FileUpload = ({
             description: `Successfully added ${validData.length} contacts from ${fileName} to the ${selectedCategory} database.`,
           });
           
-          // Clear file input
           e.target.value = '';
         } catch (error: any) {
           console.error("Error processing file:", error);
@@ -181,7 +174,6 @@ const FileUpload = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* File Upload section - top */}
       <Card className="w-full">
         <CardHeader className="py-2">
           <CardTitle className="text-md">Bulk Import</CardTitle>
@@ -222,7 +214,6 @@ const FileUpload = ({
         </CardContent>
       </Card>
       
-      {/* Contact list section - below file upload */}
       <Card className="w-full flex-1">
         <CardHeader>
           <CardTitle>Contact List</CardTitle>
@@ -236,7 +227,6 @@ const FileUpload = ({
             <p className="text-center text-gray-500 py-6">No contacts or files added yet</p>
           ) : (
             <div className="space-y-4">
-              {/* Display uploaded files */}
               {uploadedFiles.length > 0 && (
                 <Card className="shadow-sm bg-gray-50">
                   <CardContent className="p-4">
@@ -252,7 +242,6 @@ const FileUpload = ({
                 </Card>
               )}
               
-              {/* Display contacts in a table format */}
               <ContactsTable contacts={contacts} />
             </div>
           )}

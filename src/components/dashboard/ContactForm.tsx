@@ -18,6 +18,7 @@ interface Contact {
   phone: string;
   category: ContactCategory;
   source?: string;
+  userId?: string;
 }
 
 interface ContactFormProps {
@@ -62,6 +63,9 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
     setIsSubmitting(true);
     
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Create a new contact object with unique ID
       const newContact: Contact = {
         id: Date.now().toString(), // Use timestamp as a unique ID
@@ -70,15 +74,13 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
         countryCode,
         phone,
         category: selectedCategory,
-        source: "Manual entry"
+        source: "Manual entry",
+        userId: user?.id // Add user ID if authenticated
       };
       
       // Add to list of displayed contacts via parent component
       addContact(newContact);
 
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         toast({
           variant: "default",

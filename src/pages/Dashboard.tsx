@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ContactForm from "@/components/dashboard/ContactForm";
 import FileUpload from "@/components/dashboard/FileUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 type ContactCategory = "general" | "doctor" | "real_estate";
 
@@ -16,6 +17,7 @@ interface Contact {
   phone: string;
   category: string;
   source?: string;
+  userId?: string; // Add userId to track which user the contact belongs to
 }
 
 const Dashboard = () => {
@@ -23,33 +25,99 @@ const Dashboard = () => {
   const [countryCode, setCountryCode] = useState("+1");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  // Check if user is authenticated and get user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user.id);
+      }
+    };
+    
+    getUserId();
+    
+    // Set up auth state listener to update when user logs in/out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setCurrentUser(session?.user?.id || null);
+        
+        // Clear contacts when user logs out
+        if (event === 'SIGNED_OUT') {
+          setContacts([]);
+          setUploadedFiles([]);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Load contacts from localStorage when component mounts
   useEffect(() => {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
+    if (currentUser) {
+      const savedContacts = localStorage.getItem('contacts');
+      if (savedContacts) {
+        const allContacts = JSON.parse(savedContacts);
+        // Filter contacts to only show those belonging to the current user
+        const userContacts = allContacts.filter((contact: Contact) => 
+          contact.userId === currentUser || !contact.userId // Include old contacts with no userId for backward compatibility
+        );
+        setContacts(userContacts);
+      }
+      
+      const savedFiles = localStorage.getItem(`uploadedFiles_${currentUser}`);
+      if (savedFiles) {
+        setUploadedFiles(JSON.parse(savedFiles));
+      } else {
+        setUploadedFiles([]);
+      }
     }
-    
-    const savedFiles = localStorage.getItem('uploadedFiles');
-    if (savedFiles) {
-      setUploadedFiles(JSON.parse(savedFiles));
-    }
-  }, []);
+  }, [currentUser]);
 
   // Save contacts to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts]);
+    if (!currentUser) return;
+    
+    // Get all existing contacts first
+    const savedContacts = localStorage.getItem('contacts');
+    let allContacts: Contact[] = [];
+    
+    if (savedContacts) {
+      // Get all contacts that don't belong to current user
+      const otherUserContacts = JSON.parse(savedContacts).filter(
+        (contact: Contact) => contact.userId && contact.userId !== currentUser
+      );
+      
+      // Combine with current user's contacts
+      allContacts = [...otherUserContacts, ...contacts];
+    } else {
+      allContacts = contacts;
+    }
+    
+    localStorage.setItem('contacts', JSON.stringify(allContacts));
+  }, [contacts, currentUser]);
   
   // Save uploaded files to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
-  }, [uploadedFiles]);
+    if (currentUser) {
+      localStorage.setItem(`uploadedFiles_${currentUser}`, JSON.stringify(uploadedFiles));
+    }
+  }, [uploadedFiles, currentUser]);
 
   // Function to add a new contact
   const addContact = (newContact: Contact) => {
-    setContacts(prevContacts => [...prevContacts, newContact]);
+    if (currentUser) {
+      // Ensure the contact has the current user ID
+      const contactWithUserId = {
+        ...newContact,
+        userId: currentUser
+      };
+      setContacts(prevContacts => [...prevContacts, contactWithUserId]);
+    }
   };
 
   // Function to add uploaded file
@@ -59,7 +127,14 @@ const Dashboard = () => {
 
   // Function to add multiple contacts (for imports)
   const addImportedContacts = (newContacts: Contact[]) => {
-    setContacts(prevContacts => [...prevContacts, ...newContacts]);
+    if (currentUser) {
+      // Add user ID to each imported contact
+      const contactsWithUserId = newContacts.map(contact => ({
+        ...contact,
+        userId: currentUser
+      }));
+      setContacts(prevContacts => [...prevContacts, ...contactsWithUserId]);
+    }
   };
 
   return (

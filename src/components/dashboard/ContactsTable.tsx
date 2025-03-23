@@ -9,6 +9,7 @@ interface Contact {
   phone: string;
   category: string;
   source?: string;
+  userId?: string;
 }
 
 interface ContactsTableProps {
