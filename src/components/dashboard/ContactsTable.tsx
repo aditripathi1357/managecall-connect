@@ -1,35 +1,24 @@
 
-import React from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-interface ContactDetails {
+interface Contact {
   id: string;
   name: string;
   email: string;
   countryCode: string;
   phone: string;
-  category: "general" | "doctor" | "real_estate";
+  category: string;
   source?: string;
+  userId?: string;
 }
 
 interface ContactsTableProps {
-  contacts: ContactDetails[];
+  contacts: Contact[];
 }
 
 const ContactsTable = ({ contacts }: ContactsTableProps) => {
-  if (!contacts || contacts.length === 0) {
-    return <div className="text-center py-4">No contacts added yet.</div>;
-  }
-
   return (
-    <div className="border rounded-md overflow-hidden">
+    <div className="w-full overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -41,17 +30,23 @@ const ContactsTable = ({ contacts }: ContactsTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {contacts.map((contact) => (
-            <TableRow key={contact.id}>
-              <TableCell className="font-medium">{contact.name}</TableCell>
-              <TableCell>{contact.email}</TableCell>
-              <TableCell>
-                {contact.countryCode} {contact.phone}
+          {contacts.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                No contacts added yet
               </TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
             </TableRow>
-          ))}
+          ) : (
+            contacts.map((contact) => (
+              <TableRow key={contact.id}>
+                <TableCell className="font-medium">{contact.name}</TableCell>
+                <TableCell>{contact.email}</TableCell>
+                <TableCell>{contact.countryCode} {contact.phone}</TableCell>
+                <TableCell>-</TableCell> {/* Placeholder for callback */}
+                <TableCell>-</TableCell> {/* Placeholder for summary */}
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

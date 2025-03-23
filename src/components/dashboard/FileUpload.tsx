@@ -1,9 +1,8 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"; 
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -12,350 +11,240 @@ import ContactsTable from "./ContactsTable";
 
 type ContactCategory = "general" | "doctor" | "real_estate";
 
-interface FileUploadProps {
-  selectedCategory: ContactCategory;
-  defaultCountryCode: string;
-}
-
-interface ContactDetails {
+interface Contact {
   id: string;
   name: string;
   email: string;
   countryCode: string;
   phone: string;
-  category: ContactCategory;
+  category: string;
   source?: string;
+  userId?: string;
 }
 
-const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) => {
+interface FileUploadProps {
+  selectedCategory: ContactCategory;
+  defaultCountryCode: string;
+  contacts: Contact[];
+  uploadedFiles: string[];
+  addUploadedFile: (fileName: string) => void;
+  addImportedContacts: (contacts: Contact[]) => void;
+}
+
+const FileUpload = ({ 
+  selectedCategory, 
+  defaultCountryCode, 
+  contacts,
+  uploadedFiles,
+  addUploadedFile,
+  addImportedContacts
+}: FileUploadProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [contacts, setContacts] = useState<ContactDetails[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
 
-  // Load contacts from localStorage when component mounts
-  useEffect(() => {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
-      const parsedContacts = JSON.parse(savedContacts);
-      // Filter contacts by selected category
-      const filteredContacts = parsedContacts.filter(
-        (contact: ContactDetails) => contact.category === selectedCategory
-      );
-      setContacts(filteredContacts);
-    }
-    
-    const savedFiles = localStorage.getItem('uploadedFiles');
-    if (savedFiles) {
-      setUploadedFiles(JSON.parse(savedFiles));
-    }
-  }, [selectedCategory]);
-  
-  // Listen for external changes to contacts
-  useEffect(() => {
-    // Make this function accessible for the ContactForm component
-    // @ts-ignore
-    window.addImportedContacts = (newContacts: ContactDetails[]) => {
-      setContacts(prevContacts => {
-        const updatedContacts = [...prevContacts, ...newContacts];
-        localStorage.setItem('contacts', JSON.stringify(updatedContacts));
-        return updatedContacts;
-      });
-    };
-    
-    return () => {
-      // @ts-ignore
-      window.addImportedContacts = undefined;
-    };
-  }, []);
-  
-  // Save uploaded files to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
-  }, [uploadedFiles]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const extractContactsFromExcel = async (file: File): Promise<ContactDetails[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          
-          // Assume first sheet
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-          
-          // Convert to JSON
-          const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          
-          // Skip header row and process data
-          // Expected format: Name, Email, Phone (optional with country code)
-          const contacts: ContactDetails[] = [];
-          
-          // Find header row and column indices
-          const headerRow = jsonData.findIndex(row => 
-            row.some((cell: string) => 
-              typeof cell === 'string' && 
-              (cell.toLowerCase().includes('name') || 
-               cell.toLowerCase().includes('email') || 
-               cell.toLowerCase().includes('phone'))
-            )
-          );
-          
-          if (headerRow === -1) {
-            throw new Error('Could not find header row in Excel file');
-          }
-          
-          const headers = jsonData[headerRow].map((h: string) => 
-            typeof h === 'string' ? h.toLowerCase().trim() : ''
-          );
-          
-          const nameIndex = headers.findIndex(h => h.includes('name'));
-          const emailIndex = headers.findIndex(h => h.includes('email'));
-          const phoneIndex = headers.findIndex(h => h.includes('phone'));
-          
-          if (nameIndex === -1 && emailIndex === -1 && phoneIndex === -1) {
-            throw new Error('Could not find required columns (name, email, or phone)');
-          }
-          
-          // Process data rows
-          for (let i = headerRow + 1; i < jsonData.length; i++) {
-            const row = jsonData[i];
-            if (!row || row.length === 0) continue;
-            
-            const name = nameIndex !== -1 && row[nameIndex] ? String(row[nameIndex]).trim() : '';
-            const email = emailIndex !== -1 && row[emailIndex] ? String(row[emailIndex]).trim() : '';
-            let phone = phoneIndex !== -1 && row[phoneIndex] ? String(row[phoneIndex]).trim() : '';
-            
-            // Skip empty rows
-            if (!name && !email && !phone) continue;
-            
-            // Extract country code or use default
-            let countryCode = defaultCountryCode;
-            
-            // Simple heuristic: if phone starts with +, extract country code
-            if (phone.startsWith('+')) {
-              const match = phone.match(/^\+(\d+)/);
-              if (match) {
-                countryCode = '+' + match[1];
-                phone = phone.replace(/^\+\d+\s*/, '');
-              }
-            }
-            
-            // Remove any non-digit characters from phone
-            phone = phone.replace(/\D/g, '');
-            
-            contacts.push({
-              id: Date.now() + '-' + i, // Generate a unique ID
-              name,
-              email,
-              countryCode,
-              phone,
-              category: selectedCategory,
-              source: `Imported from ${file.name}`
-            });
-          }
-          
-          resolve(contacts);
-        } catch (error) {
-          console.error("Error parsing Excel file:", error);
-          reject(error);
-        }
-      };
-      
-      reader.onerror = (error) => {
-        reject(error);
-      };
-      
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      toast({
-        variant: "destructive",
-        title: "No file selected",
-        description: "Please select an Excel file to upload.",
-      });
-      return;
-    }
-    
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast({
-        variant: "destructive",
-        title: "Invalid file format",
-        description: "Please upload an Excel file (.xlsx or .xls).",
-      });
-      return;
-    }
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
     setIsUploading(true);
     
     try {
-      // Extract contacts from the Excel file
-      const extractedContacts = await extractContactsFromExcel(file);
-      
-      if (extractedContacts.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "No contacts found",
-          description: "The uploaded file did not contain any valid contacts.",
-        });
-        setIsUploading(false);
-        return;
-      }
-      
-      // Add to the list of displayed contacts
-      setContacts(prevContacts => [...prevContacts, ...extractedContacts]);
-      
-      // Add to the list of uploaded files
-      if (!uploadedFiles.includes(file.name)) {
-        setUploadedFiles(prevFiles => [...prevFiles, file.name]);
-      }
-      
-      // Store the contacts in localStorage
-      const savedContacts = localStorage.getItem('contacts');
-      const existingContacts = savedContacts ? JSON.parse(savedContacts) : [];
-      const updatedContacts = [...existingContacts, ...extractedContacts];
-      localStorage.setItem('contacts', JSON.stringify(updatedContacts));
-      
-      // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
-      // If user is authenticated, upload to database
-      if (user) {
-        let tableName = "";
-        switch (selectedCategory) {
-          case "general":
-            tableName = "general_contacts";
-            break;
-          case "doctor":
-            tableName = "doctor_contacts";
-            break;
-          case "real_estate":
-            tableName = "real_estate_contacts";
-            break;
-        }
-        
-        // Prepare data for database upload
-        const dbContacts = extractedContacts.map(contact => ({
-          name: contact.name,
-          email: contact.email,
-          country_code: contact.countryCode,
-          phone: contact.phone,
-          user_id: user.id
-        }));
-        
-        // Insert into the appropriate table
-        const { error } = await supabase
-          .from(tableName as any)
-          .insert(dbContacts);
-        
-        if (error) {
-          console.error("Supabase error:", error);
-          toast({
-            variant: "default",
-            title: "Contacts added locally only",
-            description: "Unable to save to database: " + error.message,
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const file = files[0];
+      const fileName = file.name;
+      const reader = new FileReader();
+      
+      reader.onload = async (event) => {
+        try {
+          const binaryStr = event.target?.result;
+          const workbook = XLSX.read(binaryStr, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const data = XLSX.utils.sheet_to_json(worksheet);
+          
+          let tableName = "";
+          switch (selectedCategory) {
+            case "general":
+              tableName = "general_contacts";
+              break;
+            case "doctor":
+              tableName = "doctor_contacts";
+              break;
+            case "real_estate":
+              tableName = "real_estate_contacts";
+              break;
+          }
+          
+          const validData = data.filter((row: any) => 
+            row.name && row.email && row.phone
+          ).map((row: any) => {
+            let phoneDigitsOnly = String(row.phone).replace(/\D/g, '').slice(0, 10);
+            let rowCountryCode = row.country_code || defaultCountryCode;
+            
+            return {
+              name: row.name,
+              email: row.email,
+              country_code: rowCountryCode,
+              phone: phoneDigitsOnly,
+              user_id: user.id
+            };
           });
-        } else {
+          
+          if (validData.length === 0) {
+            toast({
+              variant: "destructive",
+              title: "Invalid data",
+              description: "The Excel file does not contain valid data. Please ensure it includes name, email, and phone columns.",
+            });
+            return;
+          }
+          
+          const importedContacts = validData.map((item: any) => ({
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            name: item.name,
+            email: item.email,
+            countryCode: item.country_code,
+            phone: item.phone,
+            category: selectedCategory,
+            source: `Imported from ${fileName}`,
+            userId: user.id
+          }));
+          
+          addImportedContacts(importedContacts);
+          
+          addUploadedFile(fileName);
+          
+          const batchSize = 100;
+          for (let i = 0; i < validData.length; i += batchSize) {
+            const batch = validData.slice(i, i + batchSize);
+            const { error } = await supabase
+              .from(tableName as any)
+              .insert(batch);
+            
+            if (error) {
+              throw error;
+            }
+          }
+          
           toast({
-            title: "Upload successful",
-            description: `${extractedContacts.length} contacts uploaded to the ${selectedCategory} database.`,
+            title: "File processed",
+            description: `Successfully added ${validData.length} contacts from ${fileName} to the ${selectedCategory} database.`,
           });
+          
+          e.target.value = '';
+        } catch (error: any) {
+          console.error("Error processing file:", error);
+          toast({
+            variant: "destructive",
+            title: "Processing failed",
+            description: error.message || "Failed to process the Excel file",
+          });
+        } finally {
+          setIsUploading(false);
         }
-      } else {
+      };
+      
+      reader.onerror = () => {
         toast({
-          variant: "default",
-          title: "Contacts added locally",
-          description: `${extractedContacts.length} contacts imported. Please login to save to database.`,
+          variant: "destructive",
+          title: "File read error",
+          description: "There was an error reading the Excel file",
         });
-      }
+        setIsUploading(false);
+      };
       
-      // Reset the file input
-      setFile(null);
-      
-      // @ts-ignore
-      if (document.getElementById('file-upload')) {
-        // @ts-ignore
-        document.getElementById('file-upload').value = '';
-      }
-      
+      reader.readAsBinaryString(file);
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("Error uploading file:", error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "There was an error uploading the file.",
+        description: error.message || "There was an error uploading the file",
       });
-    } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Import Contacts</CardTitle>
-          <CardDescription>
-            Upload Excel files to bulk import contacts.
+    <div className="flex flex-col gap-6">
+      <Card className="w-full">
+        <CardHeader className="py-2">
+          <CardTitle className="text-md">Bulk Import</CardTitle>
+          <CardDescription className="text-xs">
+            Upload an Excel file to import multiple contacts at once.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="file-upload">Upload Excel File (.xlsx, .xls)</Label>
+        <CardContent className="py-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="excel-file" className="whitespace-nowrap text-sm">Excel File:</Label>
               <Input
-                id="file-upload"
+                id="excel-file"
                 type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileChange}
-                className="mt-1"
+                accept=".xlsx, .xls"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="text-sm h-8"
               />
             </div>
+            <p className="text-xs text-gray-500">
+              Required columns: name, email, and phone
+            </p>
             
-            <Button
-              onClick={handleUpload}
-              disabled={isUploading || !file}
-              className="w-full"
-            >
-              {isUploading ? "Uploading..." : "Upload File"}
-            </Button>
-            
-            {uploadedFiles.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Previously Uploaded Files:</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  {uploadedFiles.map((fileName, index) => (
-                    <li key={index}>{fileName}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="h-12 flex items-center justify-center">
+              {isUploading ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-1"></div>
+                  <p className="text-xs">Processing...</p>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <p className="text-xs">Upload Excel file to import contacts</p>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="w-full flex-1">
         <CardHeader>
-          <CardTitle>{selectedCategory.replace('_', ' ')} Contacts</CardTitle>
+          <CardTitle>Contact List</CardTitle>
           <CardDescription>
-            List of contacts in the {selectedCategory.replace('_', ' ')} category.
+            All contacts ({contacts.length})
+            {uploadedFiles.length > 0 && ` • Files uploaded: ${uploadedFiles.length}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ContactsTable contacts={contacts} />
+          {contacts.length === 0 && uploadedFiles.length === 0 ? (
+            <p className="text-center text-gray-500 py-6">No contacts or files added yet</p>
+          ) : (
+            <div className="space-y-4">
+              {uploadedFiles.length > 0 && (
+                <Card className="shadow-sm bg-gray-50">
+                  <CardContent className="p-4">
+                    <h3 className="font-medium mb-2">Uploaded Files</h3>
+                    <div className="space-y-1">
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="text-sm bg-white p-2 rounded border">
+                          {file}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <ContactsTable contacts={contacts} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
