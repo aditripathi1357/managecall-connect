@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
+import ContactsTable from "./ContactsTable"; // Import the new ContactsTable component
 
 type ContactCategory = "general" | "doctor" | "real_estate";
 
@@ -226,25 +226,6 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
             All contacts ({contacts.length})
             {uploadedFiles.length > 0 && ` • Files uploaded: ${uploadedFiles.length}`}
           </CardDescription>
-          {contacts.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                if (confirm("Are you sure you want to clear all contacts?")) {
-                  setContacts([]);
-                  localStorage.setItem('contacts', JSON.stringify([]));
-                  toast({
-                    title: "Contacts cleared",
-                    description: "All contacts have been removed from the list.",
-                  });
-                }
-              }}
-              className="mt-2"
-            >
-              Clear All
-            </Button>
-          )}
         </CardHeader>
         <CardContent>
           {contacts.length === 0 && uploadedFiles.length === 0 ? (
@@ -267,32 +248,8 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
                 </Card>
               )}
               
-              {/* Display contacts - no remove button */}
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                {contacts.map((contact) => (
-                  <Card key={contact.id} className="shadow-sm">
-                    <CardContent className="p-4">
-                      <div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">{contact.name}</span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
-                              {contact.category.replace('_', ' ')}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-600">{contact.email}</div>
-                          <div className="text-sm text-gray-600">{contact.countryCode} {contact.phone}</div>
-                          {contact.source && (
-                            <div className="text-xs text-gray-500 italic">
-                              {contact.source}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {/* Display contacts in a table format */}
+              <ContactsTable contacts={contacts} />
             </div>
           )}
         </CardContent>
@@ -310,3 +267,4 @@ declare global {
 }
 
 export default FileUpload;
+
