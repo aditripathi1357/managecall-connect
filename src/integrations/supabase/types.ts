@@ -9,7 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      doctor_contacts: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          email: string | null
+          id: number
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      general_contacts: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          email: string | null
+          id: number
+          name: string
+          phone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name: string
+          phone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string
+          phone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      real_estate_contacts: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          email: string | null
+          id: number
+          name: string | null
+          phone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          id?: number
+          name?: string | null
+          phone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

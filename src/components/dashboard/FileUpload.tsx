@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,21 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+
+  // Load contacts from localStorage when component mounts
+  useState(() => {
+    const savedContacts = localStorage.getItem('contacts');
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts));
+    }
+    
+    const savedFiles = localStorage.getItem('uploadedFiles');
+    if (savedFiles) {
+      setUploadedFiles(JSON.parse(savedFiles));
+    }
+  });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -108,8 +124,9 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
           const batchSize = 100;
           for (let i = 0; i < validData.length; i += batchSize) {
             const batch = validData.slice(i, i + batchSize);
+            // Fixed TypeScript error by using type assertion for the tableName
             const { error } = await supabase
-              .from(tableName)
+              .from(tableName as any)
               .insert(batch);
             
             if (error) {
@@ -158,8 +175,9 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
   };
 
   return (
-    <div style={{ float: "right", marginRight: "20px" }}>
-      <Card className="w-80">
+    <div className="flex flex-col gap-6">
+      {/* File Upload section - top */}
+      <Card className="w-full">
         <CardHeader className="py-2">
           <CardTitle className="text-md">Bulk Import</CardTitle>
           <CardDescription className="text-xs">
@@ -196,6 +214,86 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+      
+      {/* Contact list section - below file upload */}
+      <Card className="w-full flex-1">
+        <CardHeader>
+          <CardTitle>Contact List</CardTitle>
+          <CardDescription>
+            All contacts ({contacts.length})
+            {uploadedFiles.length > 0 && ` • Files uploaded: ${uploadedFiles.length}`}
+          </CardDescription>
+          {contacts.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (confirm("Are you sure you want to clear all contacts?")) {
+                  setContacts([]);
+                  localStorage.setItem('contacts', JSON.stringify([]));
+                  toast({
+                    title: "Contacts cleared",
+                    description: "All contacts have been removed from the list.",
+                  });
+                }
+              }}
+              className="mt-2"
+            >
+              Clear All
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {contacts.length === 0 && uploadedFiles.length === 0 ? (
+            <p className="text-center text-gray-500 py-6">No contacts or files added yet</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Display uploaded files */}
+              {uploadedFiles.length > 0 && (
+                <Card className="shadow-sm bg-gray-50">
+                  <CardContent className="p-4">
+                    <h3 className="font-medium mb-2">Uploaded Files</h3>
+                    <div className="space-y-1">
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="text-sm bg-white p-2 rounded border">
+                          {file}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Display contacts - no remove button */}
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                {contacts.map((contact) => (
+                  <Card key={contact.id} className="shadow-sm">
+                    <CardContent className="p-4">
+                      <div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{contact.name}</span>
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                              {contact.category.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">{contact.email}</div>
+                          <div className="text-sm text-gray-600">{contact.countryCode} {contact.phone}</div>
+                          {contact.source && (
+                            <div className="text-xs text-gray-500 italic">
+                              {contact.source}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -29,12 +29,19 @@ const Dashboard = () => {
             
             {["general", "doctor", "real_estate"].map((category) => (
               <TabsContent key={category} value={category}>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <ContactForm selectedCategory={category as ContactCategory} />
-                  <FileUpload 
-                    selectedCategory={category as ContactCategory} 
-                    defaultCountryCode={countryCode}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Contact form - left side, 1/3 width */}
+                  <div className="md:col-span-1">
+                    <ContactForm selectedCategory={category as ContactCategory} />
+                  </div>
+                  
+                  {/* Contact list and file upload - right side, 2/3 width */}
+                  <div className="md:col-span-2">
+                    <FileUpload 
+                      selectedCategory={category as ContactCategory} 
+                      defaultCountryCode={countryCode}
+                    />
+                  </div>
                 </div>
               </TabsContent>
             ))}
