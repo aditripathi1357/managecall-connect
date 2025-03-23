@@ -1,40 +1,47 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"; // Add Button import
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
-import ContactsTable from "./ContactsTable"; // Import the new ContactsTable component
+import ContactsTable from "./ContactsTable";
 
 type ContactCategory = "general" | "doctor" | "real_estate";
+
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  countryCode: string;
+  phone: string;
+  category: string;
+  source?: string;
+}
 
 interface FileUploadProps {
   selectedCategory: ContactCategory;
   defaultCountryCode: string;
+  contacts: Contact[];
+  uploadedFiles: string[];
+  addUploadedFile: (fileName: string) => void;
+  addImportedContacts: (contacts: Contact[]) => void;
 }
 
-const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) => {
+const FileUpload = ({ 
+  selectedCategory, 
+  defaultCountryCode, 
+  contacts,
+  uploadedFiles,
+  addUploadedFile,
+  addImportedContacts
+}: FileUploadProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-
-  // Load contacts from localStorage when component mounts
-  useState(() => {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
-    }
-    
-    const savedFiles = localStorage.getItem('uploadedFiles');
-    if (savedFiles) {
-      setUploadedFiles(JSON.parse(savedFiles));
-    }
-  });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -101,25 +108,22 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
             return;
           }
           
-          // Add contacts to the contact list (using the window function from ContactForm)
-          if (window.addImportedContacts) {
-            const importedContacts = validData.map((item: any) => ({
-              id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-              name: item.name,
-              email: item.email,
-              countryCode: item.country_code,
-              phone: item.phone,
-              category: selectedCategory,
-              source: `Imported from ${fileName}`
-            }));
-            
-            window.addImportedContacts(importedContacts);
-            
-            // Also add the file name to the uploaded files list
-            if (window.addUploadedFile) {
-              window.addUploadedFile(fileName);
-            }
-          }
+          // Add contacts to the contact list
+          const importedContacts = validData.map((item: any) => ({
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            name: item.name,
+            email: item.email,
+            countryCode: item.country_code,
+            phone: item.phone,
+            category: selectedCategory,
+            source: `Imported from ${fileName}`
+          }));
+          
+          // Add imported contacts via parent component
+          addImportedContacts(importedContacts);
+          
+          // Add the file name to the uploaded files list
+          addUploadedFile(fileName);
           
           // Insert data in batches of 100
           const batchSize = 100;
@@ -258,13 +262,4 @@ const FileUpload = ({ selectedCategory, defaultCountryCode }: FileUploadProps) =
   );
 };
 
-// Declare global window interface with our custom functions
-declare global {
-  interface Window {
-    addUploadedFile?: (fileName: string) => void;
-    addImportedContacts?: (contacts: any[]) => void;
-  }
-}
-
 export default FileUpload;
-

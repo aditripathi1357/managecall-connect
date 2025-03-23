@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -7,57 +7,31 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
-import { useNavigate } from "react-router-dom";
 
 type ContactCategory = "general" | "doctor" | "real_estate";
 
-interface ContactFormProps {
-  selectedCategory: ContactCategory;
-}
-
-interface ContactDetails {
+interface Contact {
   id: string;
   name: string;
   email: string;
   countryCode: string;
   phone: string;
   category: ContactCategory;
-  source?: string; // Added to track source of contact
+  source?: string;
 }
 
-const ContactForm = ({ selectedCategory }: ContactFormProps) => {
-  const navigate = useNavigate();
+interface ContactFormProps {
+  selectedCategory: ContactCategory;
+  addContact: (contact: Contact) => void;
+}
+
+const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+1");
   const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [contacts, setContacts] = useState<ContactDetails[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-
-  // Load contacts from localStorage when component mounts
-  useEffect(() => {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
-    }
-    
-    const savedFiles = localStorage.getItem('uploadedFiles');
-    if (savedFiles) {
-      setUploadedFiles(JSON.parse(savedFiles));
-    }
-  }, []);
-
-  // Save contacts to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts]);
-  
-  // Save uploaded files to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
-  }, [uploadedFiles]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -89,7 +63,7 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
     
     try {
       // Create a new contact object with unique ID
-      const newContact: ContactDetails = {
+      const newContact: Contact = {
         id: Date.now().toString(), // Use timestamp as a unique ID
         name,
         email,
@@ -99,15 +73,14 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
         source: "Manual entry"
       };
       
-      // Add to list of displayed contacts
-      setContacts(prevContacts => [...prevContacts, newContact]);
+      // Add to list of displayed contacts via parent component
+      addContact(newContact);
 
       // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         toast({
-          // Change from "warning" to "default" to fix type error
           variant: "default",
           title: "Contact added locally",
           description: "Please login to save contacts to the database",
@@ -142,7 +115,6 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
       if (error) {
         console.error("Supabase error:", error);
         toast({
-          // Change from "warning" to "default" to fix type error
           variant: "default",
           title: "Contact added locally only",
           description: "Unable to save to database: " + error.message,
@@ -167,21 +139,6 @@ const ContactForm = ({ selectedCategory }: ContactFormProps) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Function to add uploaded files to the list
-  const addUploadedFile = (fileName: string) => {
-    setUploadedFiles(prevFiles => [...prevFiles, fileName]);
-  };
-  
-  // Make this function accessible for the FileUpload component
-  // @ts-ignore
-  window.addUploadedFile = addUploadedFile;
-  
-  // Make contacts setter accessible for the FileUpload component
-  // @ts-ignore
-  window.addImportedContacts = (newContacts: ContactDetails[]) => {
-    setContacts(prevContacts => [...prevContacts, ...newContacts]);
   };
 
   return (
