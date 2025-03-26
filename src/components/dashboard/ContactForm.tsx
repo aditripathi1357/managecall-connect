@@ -127,8 +127,6 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
           title: "API notification",
           description: "Contact added locally but failed to send to external API",
         });
-      } else {
-        console.log("Contact data sent to API successfully");
       }
 
       if (!user) {
@@ -174,7 +172,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       } else {
         toast({
           title: "Contact added",
-          description: `The contact has been added to the ${selectedCategory} database and sent to external API`,
+          description: `The contact has been added to the ${selectedCategory} database`,
         });
       }
       
