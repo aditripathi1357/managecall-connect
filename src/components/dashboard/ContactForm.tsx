@@ -57,6 +57,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
   }) => {
     try {
       let apiUrl = "";
+      let apiName = "";
       
       // Define different API endpoints for each category
       switch(contactData.category) {
