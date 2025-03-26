@@ -49,7 +49,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
   };
 
   // Function to send contact data to external API
-  const sendContactToExternalAPI = async (contactData: { name: string; email: string; countryCode: string }) => {
+  const sendContactToExternalAPI = async (contactData: { name: string; email: string; countryCode: string; phone: string }) => {
     try {
       // This is a dummy API endpoint that you can replace with your actual API
       const dummyApiUrl = "https://jsonplaceholder.typicode.com/posts";
@@ -110,11 +110,12 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // Add to list of displayed contacts via parent component
       addContact(newContact);
 
-      // Send only name, email, and countryCode to external API
+      // Send name, email, countryCode and phone to external API
       const apiData = {
         name,
         email,
-        countryCode
+        countryCode,
+        phone
       };
       
       // Send data to external API
