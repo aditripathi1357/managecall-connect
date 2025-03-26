@@ -41,10 +41,10 @@ const Dashboard = () => {
     // Set up auth state listener to update when user logs in/out
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setCurrentUser(session?.user?.id || null);
-        
-        // Clear contacts when user logs out
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setCurrentUser(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
           setContacts([]);
           setUploadedFiles([]);
         }
@@ -56,17 +56,19 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Load contacts from localStorage when component mounts
+  // Load contacts from localStorage when component mounts or when user changes
   useEffect(() => {
     if (currentUser) {
-      const savedContacts = localStorage.getItem('contacts');
+      // Use a user-specific key for storing contacts
+      const userSpecificKey = `contacts_${currentUser}`;
+      const savedContacts = localStorage.getItem(userSpecificKey);
+      
       if (savedContacts) {
-        const allContacts = JSON.parse(savedContacts);
-        // Filter contacts to only show those belonging to the current user
-        const userContacts = allContacts.filter((contact: Contact) => 
-          contact.userId === currentUser || !contact.userId // Include old contacts with no userId for backward compatibility
-        );
-        setContacts(userContacts);
+        setContacts(JSON.parse(savedContacts));
+      } else {
+        // Initialize empty contacts array for new users
+        setContacts([]);
+        localStorage.setItem(userSpecificKey, JSON.stringify([]));
       }
       
       const savedFiles = localStorage.getItem(`uploadedFiles_${currentUser}`);
@@ -80,25 +82,11 @@ const Dashboard = () => {
 
   // Save contacts to localStorage whenever they change
   useEffect(() => {
-    if (!currentUser) return;
-    
-    // Get all existing contacts first
-    const savedContacts = localStorage.getItem('contacts');
-    let allContacts: Contact[] = [];
-    
-    if (savedContacts) {
-      // Get all contacts that don't belong to current user
-      const otherUserContacts = JSON.parse(savedContacts).filter(
-        (contact: Contact) => contact.userId && contact.userId !== currentUser
-      );
-      
-      // Combine with current user's contacts
-      allContacts = [...otherUserContacts, ...contacts];
-    } else {
-      allContacts = contacts;
+    if (currentUser && contacts.length >= 0) {
+      // Store contacts with a user-specific key
+      const userSpecificKey = `contacts_${currentUser}`;
+      localStorage.setItem(userSpecificKey, JSON.stringify(contacts));
     }
-    
-    localStorage.setItem('contacts', JSON.stringify(allContacts));
   }, [contacts, currentUser]);
   
   // Save uploaded files to localStorage whenever they change

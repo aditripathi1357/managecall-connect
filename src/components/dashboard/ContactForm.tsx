@@ -54,6 +54,8 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // This is a dummy API endpoint that you can replace with your actual API
       const dummyApiUrl = "https://jsonplaceholder.typicode.com/posts";
       
+      console.log("Sending data to API:", contactData);
+      
       const response = await fetch(dummyApiUrl, {
         method: "POST",
         headers: {
@@ -108,13 +110,14 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // Add to list of displayed contacts via parent component
       addContact(newContact);
 
-      // Send contact data to external API
+      // Send only name, email, and countryCode to external API
       const apiData = {
         name,
         email,
         countryCode
       };
       
+      // Send data to external API
       const apiSent = await sendContactToExternalAPI(apiData);
       
       if (!apiSent) {
@@ -123,6 +126,8 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
           title: "API notification",
           description: "Contact added locally but failed to send to external API",
         });
+      } else {
+        console.log("Contact data sent to API successfully");
       }
 
       if (!user) {
