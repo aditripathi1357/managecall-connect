@@ -61,16 +61,20 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // Define different API endpoints for each category
       switch(contactData.category) {
         case "general":
-          apiUrl = "https://api.example.com/general-contacts"; // Replace with your actual API
+          apiUrl = "https://jsonplaceholder.typicode.com/posts"; // General contacts API
+          apiName = "General Contacts API";
           break;
         case "doctor":
-          apiUrl = "https://api.example.com/medical-contacts"; // Replace with your actual API
+          apiUrl = "https://jsonplaceholder.typicode.com/comments"; // Medical contacts API
+          apiName = "Medical Contacts API";
           break;
         case "real_estate":
-          apiUrl = "https://api.example.com/real-estate-contacts"; // Replace with your actual API
+          apiUrl = "https://jsonplaceholder.typicode.com/albums"; // Real estate contacts API
+          apiName = "Real Estate Contacts API";
           break;
         default:
-          apiUrl = "https://api.example.com/default-contacts"; // Replace with your actual API
+          apiUrl = "https://jsonplaceholder.typicode.com/users"; // Default API
+          apiName = "Default Contacts API";
       }
       
       console.log(`Sending ${contactData.category} data to API:`, contactData);
