@@ -11,90 +11,117 @@ export type Database = {
     Tables: {
       doctor_contacts: {
         Row: {
+          called: boolean | null
           country_code: string | null
           created_at: string
+          date_time: string | null
           email: string | null
           id: number
           name: string | null
           phone: string | null
+          summary: string | null
           user_id: string | null
         }
         Insert: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name?: string | null
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Update: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name?: string | null
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
       general_contacts: {
         Row: {
+          called: boolean | null
           country_code: string | null
           created_at: string
+          date_time: string | null
           email: string | null
           id: number
           name: string
           phone: string | null
+          summary: string | null
           user_id: string | null
         }
         Insert: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name: string
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Update: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name?: string
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
       real_estate_contacts: {
         Row: {
+          called: boolean | null
           country_code: string | null
           created_at: string
+          date_time: string | null
           email: string | null
           id: number
           name: string | null
           phone: string | null
+          summary: string | null
           user_id: string | null
         }
         Insert: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name?: string | null
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Update: {
+          called?: boolean | null
           country_code?: string | null
           created_at?: string
+          date_time?: string | null
           email?: string | null
           id?: number
           name?: string | null
           phone?: string | null
+          summary?: string | null
           user_id?: string | null
         }
         Relationships: []
