@@ -54,7 +54,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // This is a dummy API endpoint that you can replace with your actual API
       const dummyApiUrl = "https://jsonplaceholder.typicode.com/posts";
       
-      console.log("🚀 Sending data to API:", JSON.stringify(contactData, null, 2));
+      console.log("Sending data to API:", contactData);
       
       const response = await fetch(dummyApiUrl, {
         method: "POST",
@@ -69,23 +69,10 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       }
       
       const data = await response.json();
-      console.log("✅ API response:", JSON.stringify(data, null, 2));
-      
-      // Display API response details in a toast
-      toast({
-        title: "API Call Successful",
-        description: (
-          <div className="mt-2 text-xs">
-            <p>Check your browser console (F12) for full details.</p>
-            <p className="mt-1">Request ID: {data.id}</p>
-          </div>
-        ),
-        variant: "default"
-      });
-      
+      console.log("API response:", data);
       return true;
     } catch (error) {
-      console.error("❌ Error sending data to external API:", error);
+      console.error("Error sending data to external API:", error);
       return false;
     }
   };
@@ -269,11 +256,6 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
           >
             {isSubmitting ? "Submitting..." : "Add Contact"}
           </Button>
-          
-          <div className="mt-4 text-xs text-gray-500 p-2 bg-gray-50 rounded-md">
-            <p>Note: When you add a contact, the data is sent to a dummy API at jsonplaceholder.typicode.com.</p>
-            <p>To see the API response, open your browser's console by pressing F12 (or right-click → Inspect → Console).</p>
-          </div>
         </form>
       </CardContent>
     </Card>
