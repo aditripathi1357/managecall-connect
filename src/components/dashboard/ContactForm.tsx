@@ -48,6 +48,33 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
     setCountryCode("+1");
   };
 
+  // Function to send contact data to external API
+  const sendContactToExternalAPI = async (contactData: { name: string; email: string; countryCode: string }) => {
+    try {
+      // This is a dummy API endpoint that you can replace with your actual API
+      const dummyApiUrl = "https://jsonplaceholder.typicode.com/posts";
+      
+      const response = await fetch(dummyApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(contactData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("API response:", data);
+      return true;
+    } catch (error) {
+      console.error("Error sending data to external API:", error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -80,6 +107,23 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       
       // Add to list of displayed contacts via parent component
       addContact(newContact);
+
+      // Send contact data to external API
+      const apiData = {
+        name,
+        email,
+        countryCode
+      };
+      
+      const apiSent = await sendContactToExternalAPI(apiData);
+      
+      if (!apiSent) {
+        toast({
+          variant: "default",
+          title: "API notification",
+          description: "Contact added locally but failed to send to external API",
+        });
+      }
 
       if (!user) {
         toast({
@@ -124,7 +168,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       } else {
         toast({
           title: "Contact added",
-          description: `The contact has been added to the ${selectedCategory} database.`,
+          description: `The contact has been added to the ${selectedCategory} database and sent to external API`,
         });
       }
       
