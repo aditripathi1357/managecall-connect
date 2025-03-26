@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -48,20 +47,45 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
     setCountryCode("+1");
   };
 
-  // Function to send contact data to external API
-  const sendContactToExternalAPI = async (contactData: { name: string; email: string; countryCode: string; phone: string }) => {
+  // Function to send contact data to different external APIs based on category
+  const sendContactToExternalAPI = async (contactData: { 
+    name: string; 
+    email: string; 
+    countryCode: string; 
+    phone: string;
+    category: ContactCategory;
+  }) => {
     try {
-      // This is a dummy API endpoint that you can replace with your actual API
-      const dummyApiUrl = "https://jsonplaceholder.typicode.com/posts";
+      let apiUrl = "";
       
-      console.log("Sending data to API:", contactData);
+      // Define different API endpoints for each category
+      switch(contactData.category) {
+        case "general":
+          apiUrl = "https://api.example.com/general-contacts"; // Replace with your actual API
+          break;
+        case "doctor":
+          apiUrl = "https://api.example.com/medical-contacts"; // Replace with your actual API
+          break;
+        case "real_estate":
+          apiUrl = "https://api.example.com/real-estate-contacts"; // Replace with your actual API
+          break;
+        default:
+          apiUrl = "https://api.example.com/default-contacts"; // Replace with your actual API
+      }
       
-      const response = await fetch(dummyApiUrl, {
+      console.log(`Sending ${contactData.category} data to API:`, contactData);
+      
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(contactData),
+        body: JSON.stringify({
+          name: contactData.name,
+          email: contactData.email,
+          phone: contactData.countryCode + contactData.phone,
+          category: contactData.category
+        }),
       });
       
       if (!response.ok) {
@@ -72,7 +96,7 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       console.log("API response:", data);
       return true;
     } catch (error) {
-      console.error("Error sending data to external API:", error);
+      console.error(`Error sending ${contactData.category} data to external API:`, error);
       return false;
     }
   };
@@ -110,22 +134,29 @@ const ContactForm = ({ selectedCategory, addContact }: ContactFormProps) => {
       // Add to list of displayed contacts via parent component
       addContact(newContact);
 
-      // Send name, email, countryCode and phone to external API
+      // Prepare data for external API
       const apiData = {
         name,
         email,
         countryCode,
-        phone
+        phone,
+        category: selectedCategory
       };
       
-      // Send data to external API
+      // Send data to external API based on category
       const apiSent = await sendContactToExternalAPI(apiData);
       
       if (!apiSent) {
         toast({
           variant: "default",
           title: "API notification",
-          description: "Contact added locally but failed to send to external API",
+          description: `Contact added locally but failed to send to ${selectedCategory} API`,
+        });
+      } else {
+        toast({
+          variant: "default",
+          title: "API notification",
+          description: `Contact data sent to ${selectedCategory} API successfully`,
         });
       }
 
